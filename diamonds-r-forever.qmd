@@ -68,4 +68,36 @@ with `summary()`.
 summary(diamonds)
 ```
 
+## `ggplot2` and friends
 
+`ggplot2` is now over 10 years old and a stable and trusted package
+for visualizations.  It is based on the core philosphy around
+Leland Wilkinson's _The Grammar of Graphics_.  
+
+> _Wilkinson, L. (2005), The Grammar of Graphics, 2nd ed., Springer._
+
+If you like, you can read up on how `ggplot2` incorporates
+those ideals [ggplot2: Elegant Graphics for Data Analysis (3e)](https://ggplot2-book.org/).
+
+It's probably safe to say it is a cornerstone of the R community.  
+The examples, and [documentation](https://ggplot2.tidyverse.org/) 
+you can find online is often extensive and well written. 
+`python` even has a port of it with the `plotnine` package.
+
+### Syntax Changes: a note about `+`
+
+Right away folks are going to notice that `ggplot2` uses
+a different syntax than the usual base pipe `|>` or 
+maggritr pipe `%>%` that you will often see out in
+the wild.  This is primarily down to how old the 
+package is, however, I find that `+` more accurately
+describes the thought process involved with crafting
+a plot.
+
+With pipes, action happen linearly in order, whereas
+you an think of `ggplot2` plots like building up a 
+layer cake. You are _adding_ layers, quite literally
+with a `+`. 
+
+
+## ggplot 2 in action
