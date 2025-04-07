@@ -134,6 +134,8 @@ can do that.  This allows plotting and visualizations to be used as one part
 of an exploratory analysis, and not just as a final, finished product, because
 it is so quick and easy to do once users are acquainted with `ggplot2`.
 
+### Adding points
+
 How about we fill in some useful details, no?
 
 ```{r}
@@ -145,5 +147,153 @@ diamonds |>
         )
 # Let's add some layers!
     ) +
+# How about some points?
+    geom_point()
+```
+
+Goodness there is alot going on there!
+How do we make sense of that mess?
+
+Notice again that we had some fairly sensible defaults, without having to
+dig into all the arguments of the functions.
+
+First, I want to save some typing. `ggplot2` objects can be saved and combined
+in fun and exciting ways.
+
+
+```{r}
+base <- 
+    diamonds |> 
+    ggplot(
+        mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
+            x = carat, # x axis
+            y = price # y axis
+        )
+    )
+
+# the same thing again
+base + geom_point()
+```
+
+Very cool.
+
+### Adding Color based on Features in the Data
+
+```{r}
+base +
+  geom_point(aes(color =  cut))
+
+# color is the argument used for points
+# which might seem fine here, but most
+# geometries that get "filled" with color
+# based on the data use the fill argument.
+# Try this code cell again with "fill"
+# instead of "color" and see what happens.
+# Why does that happen?
 
 ```
+
+Note that the default color scheme for _ordered_ factors with ggplot2
+has changed as of a recent update. I think _viridis_ is great and is color
+blind friendly- but if you were expecting something else, well you can
+always specify otherwise OR just another reason to start adopting
+a mindset where you are thinking about your dependencies, and perhaps
+keeping track and controlling them with `renv.
+
+### Cutting through the Noise
+
+Let's use a boxplot.
+
+```{r}
+
+diamonds |> 
+  ggplot() +
+  geom_boxplot(aes(cut, price))
+```
+
+How about some trend lines by cut?
+
+```{r}
+diamonds |>
+  ggplot() +
+  geom_smooth(aes(carat, price, color = cut))
+```
+
+hmmm I want less information...
+
+
+```{r}
+diamonds |>
+  ggplot() +
+  geom_smooth(
+    aes(carat, price, color = cut), # these are the aesthetics based on data
+    # below here are arguments we can tweak baseed on the geometry chosen
+    method = "lm", # for a linear regression line
+    se = FALSE # I don't want to see the confidence interval
+  )
+```
+that's a bit better. Let's tidy these up a bit.
+
+```{r}
+smooth <- 
+  diamonds |>
+  ggplot() +
+  geom_smooth(
+    aes(
+      x = carat,
+ # lets use the natural log of price to highlight differences a bit more      
+      y = log(price),
+      color = cut
+    ),
+    method = "lm",
+    se = FALSE
+  )
+
+smooth
+```
+### Tweaking the look and feel
+
+```{r}
+# there are many to choose from - and you can even build your own!
+
+smooth + theme_classic()
+
+smooth + theme_bw()
+
+smooth + theme_minimal()
+
+```
+```{r}
+# now for the labels
+
+with_labels <- 
+  smooth +
+  theme_classic() +
+  # add some labels
+  labs(
+    title = "Carat v Price by Cut",
+    subtitle = paste("Data as of", lubridate::today()),
+    caption = "CT DPH Diamond Commitee",
+    tag = "Figure 1.",
+    # the next bit refers to the mapped variables x, y etc... BUT it may
+    # not always be x and y
+    x = "Carat",
+    y = "Natural Log of Price",
+    col = "Diamond Cut" # can use an empty string "" for no label
+  )
+
+with_labels
+
+```
+
+
+### Misc tweaks
+
+```{r}
+with_labels +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "bottom"
+  )
+```
+
