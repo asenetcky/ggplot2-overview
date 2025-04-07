@@ -105,3 +105,45 @@ with a `+`.
 
 ## ggplot 2 in action
 
+`ggplot2` is fairly flexible in how you structure your
+commands, so you're likley to see some variations between
+developers.
+
+
+```{r}
+
+# we can start with the data, or a call to `ggplot()`
+# I prefer starting with the data most often, otherwise
+# folks can use ggplot(data = diamonds, ...)
+
+# let's start with a look at carat vs price
+diamonds |> 
+    ggplot(
+        mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
+            x = carat, # x axis
+            y = price # y axis
+        )
+    )
+
+```
+
+If we just run the above, we'll get a blank plot. However, take a quick look at 
+that - so much of the stage has already been laid out for us.  `ggplot2` has fairly
+sensible defaults, so for the folks who want to get in and get out quickly, they
+can do that.  This allows plotting and visualizations to be used as one part
+of an exploratory analysis, and not just as a final, finished product, because
+it is so quick and easy to do once users are acquainted with `ggplot2`.
+
+How about we fill in some useful details, no?
+
+```{r}
+diamonds |> 
+    ggplot(
+        mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
+            x = carat, # x axis
+            y = price # y axis
+        )
+# Let's add some layers!
+    ) +
+
+```
