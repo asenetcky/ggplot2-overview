@@ -1,0 +1,71 @@
+---
+title: "Diamonds are a Data Scientist's Best Friend"
+format: html
+---
+
+## Goal
+
+Today we're going to:
+
+- Introduce plotting with R and the `ggplot2` package
+- Provide resources for further reading
+- Highlight some best practices
+
+
+## The Setup
+
+Using `renv` would be the way to go - check out the recording for how to get start 
+with `renv` [here](www.findtheurlandputhere.com).  However, `renv` is not the
+focus of today, plotting in R using the `ggplot2` package is.  We're going
+to start by attaching the libraries with `library()`. See commented out
+code for a standard installion of the tidyverse.
+
+```{r install}
+
+# install.packages("pak")
+# pak::pak("tidyverse")
+
+```
+
+```{r setup}
+# suppressing the startup messages 
+library(tidyverse) |> suppressPackageStartupMessages()
+
+# ggplot2 is a core tidyverse package so it's 
+# included in the namespace when folks `library(tidyverse)`
+
+```
+
+
+## The Data
+
+We'll be working with data that comes along for the ride with the tidyverse
+packages.  You'll often see these datsets in examples all over the 
+internet. We'll stick with `diamonds` today.
+
+
+### Grabbing the Data
+```{r}
+# grab the diamonds data like so
+data(diamonds)
+```
+
+### Data Recon
+
+Lets take a look at this dataset so we can have a better idea
+of what we are working with.
+
+
+```{r}
+glimpse(diamonds)
+```
+
+So we have 10 columns and just under 54,000 rows.
+Let's take a high level look at the _content_ of the data
+with `summary()`.
+
+```{r}
+summary(diamonds)
+```
+
+
