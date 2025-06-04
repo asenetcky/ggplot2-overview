@@ -1,9 +1,7 @@
 ---
-title: "Diamonds are a Data Scientist's Best Friend"
-format: 
-    html:
-        toc: true
-        embed-resources: true
+title: "Plotting Electric Vehicle Open Data"
+subtitle: "with ggplot2 and friends"
+date: "2025-06-10"
 ---
 
 ## Goal
@@ -17,18 +15,10 @@ Today we're going to:
 
 ## The Setup
 
-Using `renv` would be the way to go - check out the recording for how to get start 
-with `renv` [here](www.findtheurlandputhere.com).  However, `renv` is not the
-focus of today, plotting in R using the `ggplot2` package is.  We're going
-to start by attaching the libraries with `library()`. See commented out
-code for a standard installion of the tidyverse.
-
-```{r install}
-
-# install.packages("pak")
-# pak::pak("tidyverse")
-
-```
+I'll be using `renv` - however, `renv` is not the
+focus of today. Plotting in R using the `ggplot2` package is.
+Be sure to check out the doco [here](https://rstudio.github.io/renv/).
+We're going to start by attaching the libraries with `library()`.
 
 ```{r setup}
 # suppressing the startup messages 
@@ -36,21 +26,44 @@ library(tidyverse) |> suppressPackageStartupMessages()
 
 # ggplot2 is a core tidyverse package so it's 
 # included in the namespace when folks `library(tidyverse)`
-
 ```
 
 
 ## The Data
 
-We'll be working with data that comes along for the ride with the tidyverse
-packages.  You'll often see these datsets in examples all over the 
-internet. We'll stick with `diamonds` today.
-
+Today we're going to use the Electric Vehicle data from our #tidytuesday
+community [challenge](https://github.com/CTOpenData/r-user-group/tree/d748587f4802578325b6a9d55c59b71563ba260d/tidy-tuesday).
 
 ### Grabbing the Data
+
+Unfortunately, `RSocrata` was pulled from the CRAN - so we're going to have to
+homebrew our own solution.
+
+Fortunately, I put together a gist on github. You may recall Charles Powell
+introduced these last year. You can take a look at the gist
+[here](https://gist.github.com/asenetcky/52bf3fa10a2dff08f62da96e2347e018).
+
+We can use `devtools` to source the gist and grab the function I wrote
+to download *all* the EV data.
+
 ```{r}
-# grab the diamonds data like so
-data(diamonds)
+#| label: gist
+
+devtools::source_gist(
+  id = "https://gist.github.com/asenetcky/52bf3fa10a2dff08f62da96e2347e018",
+  sha1 = "5b27e785462239543a6cda235382ebec7c381471"
+)
+
+# function exist?
+head(pull_odp)
+```
+
+We have our function, now lets grab that open data.
+
+```{r}
+#| label: data-grab
+
+ev <- pull_odp(resource = "y7ky-5wcz") # this is the ODP "four by four"
 ```
 
 ### Data Recon
@@ -58,9 +71,12 @@ data(diamonds)
 Lets take a look at this dataset so we can have a better idea
 of what we are working with.
 
+```{r}
+head(ev)
+```
 
 ```{r}
-glimpse(diamonds)
+glimpse(ev)
 ```
 
 So we have 10 columns and just under 54,000 rows.
@@ -68,8 +84,76 @@ Let's take a high level look at the _content_ of the data
 with `summary()`.
 
 ```{r}
-summary(diamonds)
+summary(ev)
 ```
+
+
+### Quick Wrangle!
+
+Just going to quickly wrangle some data - we're going to skip over this,
+but feel free to take a look at the source code when you have time. Pretend
+the data came like this :D
+
+```{r}
+#| label: wrangle
+#| code-fold: true
+#| code-summary: "Show the code"
+ 
+data <- 
+  ev |> 
+  mutate(
+          across(
+              .cols = c(
+                  id,
+                  vehicleweight,
+                  vehicleyear,
+                  vehicledeclaredgrossweight,
+                  vehiclerecordedgvwr,
+              ),
+              .fns = as.numeric
+          ),
+          across(
+              .cols = c(
+                  registration_date_start,
+                  registration_date_expiration
+              ),
+              .fns = as_date
+          )
+      )
+
+char_data <-
+    data |>
+    select(where(is.character))
+
+char_data <-
+    data |>
+    select(where(is.character))
+
+maybe_factors <-
+    map(
+        char_data,
+        \(var) {
+            count(char_data, {{ var }}, sort = TRUE)
+        }
+    ) |>
+    keep(\(df) nrow(df) < 100) |>
+    names()
+
+ev <-
+    data |>
+    mutate(
+        across(
+            .cols = all_of(maybe_factors),
+            .fns = \(col) {
+                col |>
+                    forcats::as_factor() |>
+                    forcats::fct_infreq()
+            }
+        )
+    )
+
+```
+
 
 ## `ggplot2` and friends
 
@@ -114,14 +198,14 @@ developers.
 
 # we can start with the data, or a call to `ggplot()`
 # I prefer starting with the data most often, otherwise
-# folks can use ggplot(data = diamonds, ...)
+# folks can use ggplot(data = ev, ...)
 
 # let's start with a look at carat vs price
-diamonds |> 
+ev |> 
     ggplot(
         mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
-            x = carat, # x axis
-            y = price # y axis
+            x = registration_date_start, # x axis
+            y = vehicletype # y axis
         )
     )
 
@@ -139,82 +223,103 @@ it is so quick and easy to do once users are acquainted with `ggplot2`.
 How about we fill in some useful details, no?
 
 ```{r}
-diamonds |> 
+ev |> 
     ggplot(
         mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
-            x = carat, # x axis
-            y = price # y axis
+            x = registration_date_start # x axis
         )
 # Let's add some layers!
     ) +
-# How about some points?
-    geom_point()
+# How about some bars?
+    geom_bar()
 ```
 
-Goodness there is alot going on there!
+Goodness there is alot going on there! 
 How do we make sense of that mess?
 
 Notice again that we had some fairly sensible defaults, without having to
 dig into all the arguments of the functions.
 
-First, I want to save some typing. `ggplot2` objects can be saved and combined
-in fun and exciting ways.
+
+Let's pretend our supervisor want's to compare the `vehicletype` over `time`.
+
+Let's do a quick wrangle so we can take a look.
 
 
 ```{r}
+#| label: natural-log
+
+# using lubridate and forcats
+agg_by_year_quarter_type <-
+    ev |>
+    mutate(
+        year = year(registration_date_start),
+        quarter = quarter(registration_date_start),
+        vehicletype = forcats::fct_lump_prop(
+            vehicletype,
+            prop = .01
+        )
+    ) |>
+    group_by(year, quarter, vehicletype) |>
+    count(name = "type_count") |>
+    ungroup() |>
+    mutate(log_type = log(type_count))
+
+head(agg_by_year_quarter_type)
+```
+
+Now, I want to save some typing. `ggplot2` objects can be saved and combined
+in fun and exciting ways.
+
+```{r}
 base <- 
-    diamonds |> 
+    agg_by_year_quarter_type |> 
     ggplot(
         mapping = aes( # we're mapping our aesthetic, think of it like a base we pin layers to
-            x = carat, # x axis
-            y = price # y axis
+            x = quarter, # x axis
+            y = log_type, # y axis
+            fill = vehicletype # we're breaking types out by color now
         )
     )
 
 # the same thing again
-base + geom_point()
+base + geom_col()
 ```
 
-Very cool.
+Cool... but we can make this better.
+Didn't this data set span multiple years?
 
 ### Adding Color based on Features in the Data
 
 ```{r}
 base +
-  geom_point(aes(color =  cut))
+  geom_col(color = "black")
 
 # color is the argument used for points
-# which might seem fine here, but most
-# geometries that get "filled" with color
+# but most geometries that get "filled" with color
 # based on the data use the fill argument.
-# Try this code cell again with "fill"
-# instead of "color" and see what happens.
-# Why does that happen?
+# And color is typically an outline or something 
+# not inside an aesthetic and/or not tied to data.
 
 ```
 
-Note that the default color scheme for _ordered_ factors with ggplot2
-has changed as of a recent update. I think _viridis_ is great and is color
-blind friendly- but if you were expecting something else, well you can
-always specify otherwise OR just another reason to start adopting
-a mindset where you are thinking about your dependencies, and perhaps
-keeping track and controlling them with `renv.
 
-### Cutting through the Noise
+### Telling a story
 
 Let's use a boxplot.
 
 ```{r}
 
-diamonds |> 
-  ggplot() +
-  geom_boxplot(aes(cut, price))
+base +
+  geom_boxplot(aes(log_type, quarter))
 ```
+
 
 How about some trend lines by cut?
 
 ```{r}
-diamonds |>
+#| eval: false
+ev |>
   ggplot() +
   geom_smooth(aes(carat, price, color = cut))
 ```
@@ -223,7 +328,8 @@ hmmm I want less information...
 
 
 ```{r}
-diamonds |>
+#| eval: false
+ev |>
   ggplot() +
   geom_smooth(
     aes(carat, price, color = cut), # these are the aesthetics based on data
@@ -235,8 +341,9 @@ diamonds |>
 that's a bit better. Let's tidy these up a bit.
 
 ```{r}
+#| eval: false
 smooth <- 
-  diamonds |>
+  ev |>
   ggplot() +
   geom_smooth(
     aes(
@@ -254,6 +361,7 @@ smooth
 ### Tweaking the look and feel
 
 ```{r}
+#| eval: false
 # there are many to choose from - and you can even build your own!
 
 smooth + theme_classic()
@@ -264,6 +372,7 @@ smooth + theme_minimal()
 
 ```
 ```{r}
+#| eval: false
 # now for the labels
 
 with_labels <- 
@@ -290,10 +399,12 @@ with_labels
 ### Misc tweaks
 
 ```{r}
+#| eval: false
 with_labels +
   theme(
     legend.direction = "horizontal",
     legend.position = "bottom"
   )
 ```
+
 
