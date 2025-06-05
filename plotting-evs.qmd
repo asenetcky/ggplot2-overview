@@ -79,10 +79,8 @@ Lets take a look at this dataset so we can have a better idea
 of what we are working with.
 
 ```{r}
+#| label: peeking
 head(ev)
-```
-
-```{r}
 glimpse(ev)
 ```
 
@@ -90,10 +88,10 @@ So we have `20` columns and `60,489` rows.
 
 ### Quick Wrangle!
 
-I don't want to spoil anyone's sense of discovery with these data.
-So I am going to just quickly wrangle it and skip over it,
-but feel free to take a look at the source code when you have time.
-Or after you're done experimenting with it.
+> I don't want to spoil anyone's sense of discovery with these data.
+> So I am going to just quickly wrangle it and skip over it,
+> but feel free to take a look at the source code when you have time.
+> Or after you're done experimenting with it.
 
 ```{r}
 #| label: wrangle
@@ -156,7 +154,7 @@ ev <-
 ```
 
 
-## `ggplot2` and friends
+## ggplot2 and friends
 
 `ggplot2` is now over 10 years old and a stable and trusted package
 for visualizations.  It is based on the core philosphy around
@@ -172,7 +170,7 @@ The examples, and [documentation](https://ggplot2.tidyverse.org/)
 you can find online is often extensive and well written. 
 `python` even has a port of it with the `plotnine` package.
 
-### Syntax Changes: a note about `+`
+### Syntax: a note about `+`
 
 Right away folks are going to notice that `ggplot2` uses
 a different syntax than the usual base pipe `|>` or 
@@ -182,11 +180,13 @@ package is, however, I find that `+` more accurately
 describes the thought process involved with crafting
 a plot.
 
-With pipes, action happen linearly in order, whereas
-you an think of `ggplot2` plots like building up a 
-layer cake. You are _adding_ layers, quite literally
-with a `+`. 
-
+::: {.callout-tip}
+With pipes, actions happen linearly in order, whereas
+with `+` you can think of `ggplot2` plots like building 
+up a layer cake. You are _adding_ layers, quite literally
+with a `+`. The order of the layers doesn't matter *quite*
+as much as the whole.
+:::
 
 ## ggplot 2 in action
 
@@ -195,7 +195,7 @@ commands, so you're likley to see some variations between
 developers.
 
 ```{r}
-#| labek: setting-the-stage
+#| label: setting-the-stage
 
 # we can start with the data, or a call to `ggplot()`
 # I prefer starting with the data and piping it in, otherwise
@@ -237,10 +237,53 @@ ev |>
   geom_bar() # How about some bars?
 ```
 
+You can combine `geom_` layers!
+
+We can have one geom:
+
+```{r}
+#| label: combining-geoms
+#| code-fold: true
+
+count_by_day <-
+  ev |>
+  count(registration_date_start, name = "count")
+
+count_by_day |>
+  ggplot(
+    mapping = aes(
+      x = registration_date_start,
+      y = count
+    )
+  ) +
+  geom_point()
+```
+
+Or two - sharing the same aesthetic and variables
+```{r}
+#| label: or-two
+
+count_by_day |>
+  ggplot(
+    mapping = aes(
+      x = registration_date_start,
+      y = count
+    )
+  ) +
+  geom_point() +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    color = "red",
+    linewidth = 1.5
+  ) |>
+    suppressMessages()
+
+```
+
 Goodness there is alot going on there! 
 
 Does day of week make a difference? Let's find out.
-
 
 ```{r}
 #| label: day-of-week
@@ -264,11 +307,14 @@ dig into all the arguments of the functions.
 
 
 ### The Ask
-Let's pretend our supervisor want's to compare the `vehicletype` over `time`.
-
-Let's do another quick wrangle so we can take a look.
+Pretend for a moment that our supervisor wants to compare the 
+`vehicletype` over `time`.
+We'll do another quick wrangle so we can more easily compare types
+over time.
 
 ```{r}
+#| label: aggregating
+
 agg_by_year_quarter_type <-
   ev |>
   mutate(
@@ -279,14 +325,8 @@ agg_by_year_quarter_type <-
       prop = .01
     )
   ) |>
-  group_by(year, quarter, vehicletype) |>
-  count(name = "type_count") |>
-  ungroup()
+  count(year, quarter, vehicletype, name = "type_count")
 
-```
-
-
-```{r}
 agg_by_year_quarter_type |>
   ggplot() +
   geom_col(
@@ -300,6 +340,8 @@ agg_by_year_quarter_type |>
 what about year and quarter?
 
 ```{r}
+#| label: year-quarter
+
 agg_by_year_quarter_type |>
   ggplot() +
   geom_col(
@@ -311,14 +353,16 @@ agg_by_year_quarter_type |>
   facet_grid(cols = vars(year))
 ```
 
+
+### Adding Color based on Features in the Data
 Didn't we want to compare `vehicletype`?
 let's do that....but how?
 
 Using color!
 
-### Adding Color based on Features in the Data
-
 ```{r}
+#| label: caryons
+
 agg_by_year_quarter_type |>
   ggplot() +
   geom_col(
@@ -349,6 +393,8 @@ head(agg_by_year_quarter_type)
 And try again.
 
 ```{r}
+#| label: take-two
+
 agg_by_year_quarter_type |>
   ggplot() +
   geom_col(
@@ -363,6 +409,8 @@ Now, I want to save some typing. `ggplot2` objects can be saved and combined
 in fun and exciting ways.
 
 ```{r}
+#| label: saving-ggplot-objects
+
 base <-
   agg_by_year_quarter_type |>
   ggplot(
@@ -370,17 +418,39 @@ base <-
   ) +
   facet_grid(cols = vars(year))
 
-# the same thing again
 base
+```
+
+Nothing in that plot until we add a `geom_`. So just like our
+plot with the points and the trendline  where we combined
+`geom_`'s in one end to end statement - you can combine *saved* 
+`ggplot2` objects with `geom_`'s as well.
+
+```{r}
+#| label: combine-objects
+
 col_base <- base + geom_col(position = position_dodge())
 col_base
 ```
 
-Cool... now we can focus on making this better.
+Cool... now we can focus on making this look nicer.
 
 ### Tweaking the look and feel
 
+`ggplot2` has a number of built in themes, and you can even make your
+own. State of Connecticut has some newish style specifications, sounds
+like a great theme to make and have on hand. Why not ship it in an R package?
+
+::: {.callout-tip}
+OPM took that style spec and ran with it in their publication:
+[CT Data Visualization Guidelines](https://ctopendata.github.io/data-visualization-guidelines/)
+:::
+
+Here are some common built-in themes:
+
 ```{r}
+#| label: ggplot-themes
+
 # there are many to choose from - and you can even build your own!
 
 col_base + theme_classic()
@@ -392,8 +462,9 @@ col_base + theme_minimal()
 ```
 
 ```{r}
-# now for the labels
+#| label: label-plot
 
+# now for the labels
 with_labels <-
   col_base +
   theme_classic() +
@@ -415,9 +486,10 @@ with_labels
 ```
 
 
-### Some Polish
+### Opinionated Polish
 
 ```{r}
+#| label: its-like-my-opinion-man
 
 base +
   geom_col(
@@ -437,6 +509,7 @@ base +
     fill = "",
     title = "Natural Log of Vehicle Type Count by Quarter by Year"
   )
+
 ```
 
 

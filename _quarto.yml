@@ -25,6 +25,9 @@ format:
           - text: R-User Group's GitHub
             href: https://github.com/CTOpenData/r-user-group
             icon: "github"
+          - text: OPM CT Data Viz Guidelines
+            href: https://ctopendata.github.io/data-visualization-guidelines/
+            icon: "box-arrow-up-right"
           - text: github.com/asenetcky
             href: https://github.com/asenetcky
             icon: "github"
