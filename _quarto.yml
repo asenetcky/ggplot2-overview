@@ -6,10 +6,9 @@ author:
       - BS
       - MPH
     url: https://asenetcky.dev
-    phone: "(860) 733-3609"
 author-title: "Data Scientist"
 
-title-block-banner: "black" #"#00214D" #"#3371E7"
+title-block-banner: "black"
 number-sections: true
 
 format:
